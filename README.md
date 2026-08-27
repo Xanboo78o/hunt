@@ -19,6 +19,16 @@ Timer runs in the corner from the moment MODE locks, and gets logged with the re
 The first wheel won't spin until GPS says you've moved 60 m. There's an override.
 Toggle it off in setup if it's ever in your way.
 
+### Sound
+Real sample files in `snd/`, not runtime synthesis. They're baked offline by
+`node tools/make-sounds.mjs` (modal synthesis → WAV, fixed seed so rebuilds are
+identical). Six round-robin takes of the tick so it never repeats back to back, and the
+tick gets brighter and thinner the faster the wheel is going. Edit the mode tables in
+that script to change the character of anything, then re-run it.
+
+Note: `navigator.vibrate` is a no-op in iOS Safari, so on the iPad the sound is
+carrying all of the feel on its own.
+
 ### Tuning
 Everything lives in `CFG` at the top of `app.js` — rules, mode weights, slice count,
 radius, lock distance. `TREE_GENERA` decides tree vs plant (iNat has no "tree" flag),

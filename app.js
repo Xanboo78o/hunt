@@ -61,26 +61,57 @@ function dayNumber() {
   return days.size;
 }
 
-/* ---------------- sound ---------------- */
-let AC = null;
-function audioUnlock() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch {} } if (AC && AC.state === 'suspended') AC.resume(); }
-function click(freq = 1600, dur = 0.02, vol = 0.13) {
-  if (!AC) return;
-  const o = AC.createOscillator(), g = AC.createGain();
-  o.type = 'square'; o.frequency.value = freq;
-  g.gain.setValueAtTime(vol, AC.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + dur);
-  o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime + dur);
+/* ---------------- sound (real samples — see tools/make-sounds.mjs) ---------------- */
+const SND_FILES = { tick: [1, 2, 3, 4, 5, 6].map(i => `snd/tick${i}.wav`), thunk: ['snd/thunk.wav'], unlock: ['snd/unlock.wav'] };
+const SND = { tick: [], thunk: [], unlock: [] };
+let AC = null, rawSnd = null, decoded = false;
+
+// grab the bytes at boot; decoding waits for the first gesture (iOS)
+function prefetchSounds() {
+  const one = u => fetch(u).then(r => r.arrayBuffer()).catch(() => null);
+  rawSnd = {};
+  for (const k in SND_FILES) rawSnd[k] = Promise.all(SND_FILES[k].map(one));
 }
-function thunk() {
+
+function audioUnlock() {
+  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch {} }
   if (!AC) return;
-  const o = AC.createOscillator(), g = AC.createGain();
-  o.type = 'sawtooth'; o.frequency.setValueAtTime(220, AC.currentTime);
-  o.frequency.exponentialRampToValueAtTime(46, AC.currentTime + 0.3);
-  g.gain.setValueAtTime(0.3, AC.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + 0.42);
-  o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime + 0.45);
+  if (AC.state === 'suspended') AC.resume();
+  if (decoded || !rawSnd) return;
+  decoded = true;
+  for (const k in rawSnd) {
+    rawSnd[k].then(list => Promise.all(list.map(b => b ? AC.decodeAudioData(b).catch(() => null) : null)))
+      .then(bufs => { SND[k] = bufs.filter(Boolean); });
+  }
 }
+
+const lastTake = {};
+function play(bank, rate = 1, gain = 1) {
+  const list = SND[bank];
+  if (!AC || !list || !list.length) return;
+  let i = 0;
+  if (list.length > 1) {                      // round-robin, never the same take twice running
+    do { i = Math.floor(Math.random() * list.length); } while (i === lastTake[bank]);
+    lastTake[bank] = i;
+  }
+  const src = AC.createBufferSource(), g = AC.createGain();
+  src.buffer = list[i];
+  src.playbackRate.value = rate;
+  g.gain.value = gain;
+  src.connect(g); g.connect(AC.destination);
+  src.start();
+}
+
+// a real wheel ticks brighter and thinner the faster it goes
+let lastTickAt = 0;
+function playTick(speed) {
+  const now = performance.now();
+  if (now - lastTickAt < 9) return;      // don't let it turn to mush
+  lastTickAt = now;
+  const fast = Math.min(1, speed / 20);
+  play('tick', 0.94 + Math.random() * 0.12 + fast * 0.16, 0.78 - fast * 0.34);
+}
+
 const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
 
 /* ============================================================
@@ -202,7 +233,7 @@ cv.addEventListener('pointerup', () => {
 
 function tickCheck() {
   const s = sliceAtPointer();
-  if (s !== W.lastSlice) { W.lastSlice = s; click(); buzz(8); }
+  if (s !== W.lastSlice) { W.lastSlice = s; playTick(Math.abs(W.vel)); buzz(8); }
 }
 
 let last = performance.now();
@@ -213,7 +244,7 @@ function frame(now) {
     W.vel *= Math.pow(0.32, dt);          // friction
     if (Math.abs(W.vel) < 0.22) {
       W.vel = 0; W.spinning = false; W.done = true;
-      thunk(); buzz([30, 40, 90]);
+      play('thunk', 0.97 + Math.random() * 0.06, 0.95); buzz([30, 40, 90]);
       const i = sliceAtPointer();
       setTimeout(() => W.onDone && W.onDone(W.items[i], i), 520);
     }
@@ -583,7 +614,7 @@ function unlock(forced) {
   if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
   $('#lockNotice').classList.add('hidden');
   $('#wheelWrap').style.opacity = 1;
-  if (!forced) { thunk(); buzz([40, 60, 40, 60, 120]); }
+  if (!forced) { play('unlock', 1, 0.95); buzz([40, 60, 40, 60, 120]); }
 }
 
 /* ============================================================
@@ -607,6 +638,7 @@ $('#wipe').onclick = () => { if (confirm('erase every hunt?')) { localStorage.cl
 document.addEventListener('pointerdown', audioUnlock, { once: true });
 
 /* boot */
+prefetchSounds();
 $('#lockMeters').textContent = CFG.INDOOR_LOCK_M;
 $('#indoorLock').checked = DB.get('lockOn', true);
 renderLog();
