@@ -62,7 +62,10 @@ function dayNumber() {
 }
 
 /* ---------------- sound (real samples — see tools/make-sounds.mjs) ---------------- */
-const SND_FILES = { tick: [1, 2, 3, 4, 5, 6].map(i => `snd/tick${i}.wav`), thunk: ['snd/thunk.wav'], unlock: ['snd/unlock.wav'] };
+const SND_PICK = DB.get('sndPick', null);   // set by sounds.html; null = the defaults below
+const SND_FILES = SND_PICK && SND_PICK.tick && SND_PICK.tick.length
+  ? { tick: SND_PICK.tick, thunk: [SND_PICK.thunk], unlock: [SND_PICK.unlock] }
+  : { tick: [1, 2, 3, 4, 5, 6].map(i => `snd/tick${i}.wav`), thunk: ['snd/thunk.wav'], unlock: ['snd/unlock.wav'] };
 const SND = { tick: [], thunk: [], unlock: [] };
 let AC = null, rawSnd = null, decoded = false;
 
