@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>THE WHEEL — sound picker</title>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 <style>
   #app{justify-content:flex-start}
   h1{font-family:Anton,Impact,sans-serif;font-size:34px;margin:6px 0 2px;letter-spacing:.03em}
@@ -86,40 +86,20 @@ const LIB = {
 "name": "chips-collide-4"
 },
 {
-"file": "snd/lib/tick--click_001.wav",
-"name": "click_001"
+"file": "snd/lib/tick--chips-stack-2.wav",
+"name": "chips-stack-2"
 },
 {
-"file": "snd/lib/tick--click_002.wav",
-"name": "click_002"
+"file": "snd/lib/tick--chips-stack-5.wav",
+"name": "chips-stack-5"
 },
 {
-"file": "snd/lib/tick--click_005.wav",
-"name": "click_005"
-},
-{
-"file": "snd/lib/tick--drop_002.wav",
-"name": "drop_002"
+"file": "snd/lib/tick--chips-stack-6.wav",
+"name": "chips-stack-6"
 },
 {
 "file": "snd/lib/tick--impactWood_light_000.wav",
 "name": "impactWood_light_000"
-},
-{
-"file": "snd/lib/tick--toggle_001.wav",
-"name": "toggle_001"
-},
-{
-"file": "snd/lib/tick--toggle_002.wav",
-"name": "toggle_002"
-},
-{
-"file": "snd/lib/tick--toggle_003.wav",
-"name": "toggle_003"
-},
-{
-"file": "snd/lib/tick--toggle_004.wav",
-"name": "toggle_004"
 }
 ],
 "thunk": [
@@ -130,14 +110,6 @@ const LIB = {
 {
 "file": "snd/lib/thunk--die-throw-1.wav",
 "name": "die-throw-1"
-},
-{
-"file": "snd/lib/thunk--drop_001.wav",
-"name": "drop_001"
-},
-{
-"file": "snd/lib/thunk--drop_004.wav",
-"name": "drop_004"
 },
 {
 "file": "snd/lib/thunk--impactMining_002.wav",
@@ -154,24 +126,28 @@ const LIB = {
 ],
 "unlock": [
 {
+"file": "snd/lib/unlock--card-fan-1.wav",
+"name": "card-fan-1"
+},
+{
+"file": "snd/lib/unlock--cards-pack-take-out-1.wav",
+"name": "cards-pack-take-out-1"
+},
+{
+"file": "snd/lib/unlock--chips-handle-1.wav",
+"name": "chips-handle-1"
+},
+{
 "file": "snd/lib/unlock--chips-stack-1.wav",
 "name": "chips-stack-1"
 },
 {
-"file": "snd/lib/unlock--confirmation_001.wav",
-"name": "confirmation_001"
-},
-{
-"file": "snd/lib/unlock--confirmation_004.wav",
-"name": "confirmation_004"
+"file": "snd/lib/unlock--impactMetal_light_000.wav",
+"name": "impactMetal_light_000"
 },
 {
 "file": "snd/lib/unlock--impactMetal_light_002.wav",
 "name": "impactMetal_light_002"
-},
-{
-"file": "snd/lib/unlock--switch_003.wav",
-"name": "switch_003"
 }
 ]
 };
@@ -180,7 +156,7 @@ const DEFAULTS = {
   tick: ['chips-collide-1','chips-collide-2','chips-collide-3','chips-collide-4','chip-lay-1','chip-lay-2']
           .map(n => `snd/lib/tick--${n}.wav`),
   thunk: 'snd/lib/thunk--impactWood_heavy_000.wav',
-  unlock: 'snd/lib/unlock--confirmation_001.wav',
+  unlock: 'snd/lib/unlock--chips-stack-1.wav',
 };
 const DB = {
   get(k,d){ try { return JSON.parse(localStorage.getItem('wheel.'+k)) ?? d; } catch { return d; } },

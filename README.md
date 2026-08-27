@@ -20,9 +20,13 @@ The first wheel won't spin until GPS says you've moved 60 m. There's an override
 Toggle it off in setup if it's ever in your way.
 
 ### Sound
-Real recordings, not synthesis. Everything comes from **Kenney's CC0 packs**
-(Casino Audio, Impact Sounds, Interface Sounds) — public domain, commercial use fine,
-no attribution required. Provenance is in `snd/CREDITS.txt`.
+Real recordings, not synthesis. Everything comes from **Kenney's CC0 packs** — public
+domain, commercial use fine, no attribution required. Provenance is in `snd/CREDITS.txt`.
+
+Only **Casino Audio** and **Impact Sounds** are used: real recorded objects (plastic
+chips, cards, wood and metal impacts). Kenney's *Interface Sounds* pack was tried and
+pulled — those are synthesized UI blips and the melodic ones sounded fake next to the
+rest.
 
 Converted with ffmpeg to mono 44.1 kHz **WAV**, because iOS Safari can't be trusted to
 decode Ogg Vorbis. Head silence trimmed, peak-normalised to -1.5 dBFS. Ticks are

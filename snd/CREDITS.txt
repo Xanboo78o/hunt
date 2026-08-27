@@ -1,18 +1,21 @@
 All sounds are from Kenney (kenney.nl) asset packs:
-  Casino Audio, Impact Sounds, Interface Sounds
+  Casino Audio, Impact Sounds
 
 License: Creative Commons Zero (CC0 1.0 Universal) — public domain.
   http://creativecommons.org/publicdomain/zero/1.0/
 Free for personal and commercial use. No attribution required (this file is courtesy).
 
-Processed here with ffmpeg: converted to mono 44.1 kHz WAV (Safari does not reliably
-decode Ogg Vorbis), head silence trimmed, peak-normalised to -1.5 dBFS. Tick candidates
-are additionally hard-trimmed to 140 ms with an 18 ms fade so they don't turn to mush
-when the wheel is spinning fast.
+Kenney's Interface Sounds pack was tried and then removed on purpose: those are
+synthesized UI blips, not recordings, and the melodic ones stuck out badly. Everything
+here now is a real recorded object — plastic chips, cards, wood and metal impacts.
+
+Processed with ffmpeg: mono 44.1 kHz WAV (Safari does not reliably decode Ogg Vorbis),
+head silence trimmed, peak-normalised to -1.5 dBFS. Tick candidates are additionally
+hard-trimmed to 140 ms with an 18 ms fade so they don't turn to mush at wheel speed.
 
 snd/tick1-6.wav  <- Casino Audio: chips-collide-1..4, chip-lay-1..2
 snd/thunk.wav    <- Impact Sounds: impactWood_heavy_000
-snd/unlock.wav   <- Interface Sounds: confirmation_001
+snd/unlock.wav   <- Casino Audio: chips-stack-1
 
 snd/lib/ holds every alternate take. Open sounds.html to audition them and pick
 different ones — your choice saves to the browser and the app picks it up.

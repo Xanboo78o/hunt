@@ -62,10 +62,11 @@ function dayNumber() {
 }
 
 /* ---------------- sound (real samples — see tools/make-sounds.mjs) ---------------- */
-const SND_PICK = DB.get('sndPick', null);   // set by sounds.html; null = the defaults below
+const SND_DEFAULTS = { tick: [1, 2, 3, 4, 5, 6].map(i => `snd/tick${i}.wav`), thunk: ['snd/thunk.wav'], unlock: ['snd/unlock.wav'] };
+const SND_PICK = DB.get('sndPick', null);   // set by sounds.html; null = the defaults
 const SND_FILES = SND_PICK && SND_PICK.tick && SND_PICK.tick.length
   ? { tick: SND_PICK.tick, thunk: [SND_PICK.thunk], unlock: [SND_PICK.unlock] }
-  : { tick: [1, 2, 3, 4, 5, 6].map(i => `snd/tick${i}.wav`), thunk: ['snd/thunk.wav'], unlock: ['snd/unlock.wav'] };
+  : SND_DEFAULTS;
 const SND = { tick: [], thunk: [], unlock: [] };
 let AC = null, rawSnd = null, decoded = false;
 
@@ -82,9 +83,15 @@ function audioUnlock() {
   if (AC.state === 'suspended') AC.resume();
   if (decoded || !rawSnd) return;
   decoded = true;
-  for (const k in rawSnd) {
-    rawSnd[k].then(list => Promise.all(list.map(b => b ? AC.decodeAudioData(b).catch(() => null) : null)))
-      .then(bufs => { SND[k] = bufs.filter(Boolean); });
+  const decode = list => Promise.all(list.map(b => b ? AC.decodeAudioData(b).catch(() => null) : null));
+  for (const k of Object.keys(rawSnd)) {
+    rawSnd[k].then(decode).then(async bufs => {
+      SND[k] = bufs.filter(Boolean);
+      if (SND[k].length) return;
+      // a saved pick can point at a file that no longer exists — fall back rather than go silent
+      const raw = await Promise.all(SND_DEFAULTS[k].map(u => fetch(u).then(r => r.arrayBuffer()).catch(() => null)));
+      SND[k] = (await decode(raw)).filter(Boolean);
+    });
   }
 }
 
