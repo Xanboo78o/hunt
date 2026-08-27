@@ -144,6 +144,11 @@ input[type=text]:focus{outline:none;border-color:var(--gold)}
 .dot{width:7px;height:7px;border-radius:99px;background:#3a322c;transition:background .2s,width .2s}
 .dot.on{background:var(--gold);width:18px}
 .credit{font-size:9px;color:#5f554d;margin-top:6px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.newtag{
+  display:inline-block;vertical-align:middle;background:var(--acid);color:#1c2400;
+  font-family:"JetBrains Mono",monospace;font-weight:700;font-size:11px;letter-spacing:.16em;
+  padding:4px 7px;border-radius:6px;margin-left:8px;position:relative;top:-4px;
+}
 .brief-no{
   font-family:Anton,Impact,sans-serif;font-size:34px;color:var(--gold);
   line-height:1;letter-spacing:.02em;margin-top:2px;
@@ -167,8 +172,9 @@ input[type=text]:focus{outline:none;border-color:var(--gold)}
 .log-head h2{font-family:Anton,Impact,sans-serif;font-size:30px;margin:0;letter-spacing:.04em}
 .logstats{display:flex;gap:8px;margin-bottom:14px}
 .stat{flex:1;background:var(--ink2);border-radius:12px;padding:10px;text-align:center}
-.stat b{display:block;font-family:Anton,sans-serif;font-size:26px;color:var(--acid)}
-.stat span{font-size:9px;letter-spacing:.14em;color:var(--dim)}
+.stat{padding:10px 6px}
+.stat b{display:block;font-family:Anton,sans-serif;font-size:24px;color:var(--acid)}
+.stat span{font-size:8px;letter-spacing:.1em;color:var(--dim)}
 #logList{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;margin-bottom:12px}
 .entry{
   display:flex;gap:10px;align-items:center;padding:10px;

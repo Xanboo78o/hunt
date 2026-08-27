@@ -13,11 +13,22 @@ A hunt randomizer that only works outside.
   If CATCH lands on something you shouldn't grab (a bird, a mammal, a reptile, or a
   protected species) the app **force-downgrades it to PHOTOGRAPHY on screen.**
 
-Every target carries a **catalogue number** — `#001` is the most-sighted thing of its
-kind within range, counting down from there. Numbered per object type, so there's a
-CREATURE #001 and a TREE #001. In Concord NH: creature #001 is the Common Eastern
-Bumble Bee, #003 is the American Robin; tree #001 is eastern white pine; rock #001 is
-sandstone.
+### The dex
+Pokedex rules. **The first time you ever meet something it claims the next free number,
+and that number is its forever.** Nothing renumbers, ever. One global list across
+creatures, plants, trees and rocks — so #007 might be a moth and #008 a slab of schist.
+
+`#001` is seeded to the **American Robin** (the first bird Adam learned). Everything
+else starts at #002 in the order you actually run into it. A first encounter shows a
+green **NEW** flash next to the number.
+
+The dex tracks *seen* and *got* separately, like a real dex — rolling something registers
+it, tapping GOT IT marks it caught. The log screen counts both.
+
+To pin another number, add it to `DEX_SEED` at the top of `app.js`.
+
+**It lives in localStorage.** Clearing site data on the iPad wipes the dex. Worth an
+export button before the numbers mean anything.
 
 The brief shows **3 photos you can swipe through** (iNaturalist `taxon_photos`), with the
 photographer's credit under them — the photos are CC-licensed, so the credit stays on
