@@ -2,13 +2,12 @@
 
 A hunt randomizer that only works outside.
 
-**OBJECT → SPECIES → RULE → MODE**
+**OBJECT → SPECIES → MODE**
 
 - **OBJECT** — plant / tree / rock / creature
 - **SPECIES** — 12 slices sampled from what actually lives within ~200 miles of you.
   Slice size = real local sighting counts, so the common thing really is the fat slice.
   Plants + creatures from the **iNaturalist** API. Rocks from **Macrostrat** — your real bedrock.
-- **RULE** — NIGHT TIME / MORNING / RUN / GOLDEN HOUR / OFF THE PATH / ONE MILE OUT
 - **MODE** — CATCH 60% / PHOTOGRAPHY 25% / SPEEDRUN 15%.
   If CATCH lands on something you shouldn't grab (a bird, a mammal, a reptile, or a
   protected species) the app **force-downgrades it to PHOTOGRAPHY on screen.**

@@ -1,13 +1,10 @@
 /* ============================================================
    THE WHEEL  —  a hunt randomizer that only works outside
-   chain: OBJECT -> SPECIES -> RULE -> MODE
+   chain: OBJECT -> SPECIES -> MODE
    ============================================================ */
 
 const CFG = {
   OBJECTS: ['PLANT', 'TREE', 'ROCK', 'CREATURE'],
-
-  // edit freely — these are the spice
-  RULES: ['NIGHT TIME', 'MORNING', 'RUN', 'GOLDEN HOUR', 'OFF THE PATH', 'ONE MILE OUT'],
 
   // weights are drawn as real slice sizes. CATCH is 60% of the wheel.
   MODES: [
@@ -440,7 +437,7 @@ function rarityTier(item, pool) {
 /* ============================================================
    THE CHAIN
    ============================================================ */
-const STAGES = ['OBJECT', 'SPECIES', 'RULE', 'MODE'];
+const STAGES = ['OBJECT', 'SPECIES', 'MODE'];
 
 function crumbs() {
   const b = $('#breadcrumb'); b.innerHTML = '';
@@ -478,9 +475,6 @@ async function runStage() {
     }
     $('#loadNote').textContent = `${S.pool.length} on record here · showing ${Math.min(CFG.SLICES, S.pool.length)}`;
     loadWheel(sample(S.pool, CFG.SLICES), pick);
-
-  } else if (stage === 'RULE') {
-    loadWheel(CFG.RULES.map(r => ({ label: r, w: 1 })), pick);
 
   } else {
     loadWheel(CFG.MODES.map(m => ({ label: m.name, w: m.w })), pick);
@@ -543,7 +537,6 @@ async function startHunt() {
     no: dex.no, isNew: dex.isNew, dexKey: dexKey(sp),
     photos: detail.photos.length ? detail.photos : (sp.photo ? [{ url: sp.photo, credit: '' }] : []),
     rarity: rarityTier(sp, S.pool),
-    rule: S.picked.RULE.label,
     mode: final, rolled: mode, downgraded: final !== mode, why,
   };
   DB.set('active', S.active);
@@ -558,7 +551,6 @@ function renderBrief() {
   $('#briefSci').textContent = h.sci || '';
   $('#briefRarity').textContent = h.rarity || '';
   buildStrip(h.photos || []);
-  $('#briefRule').textContent = h.rule;
   $('#briefMode').textContent = h.mode;
 
   const dg = $('#downgrade');
@@ -642,7 +634,7 @@ function renderLog() {
       <div class="e-day">D${h.day}</div>
       <div class="e-mid">
         <div class="e-name"><span class="e-no">${catNo(h.no)}</span> ${h.name}</div>
-        <div class="e-meta">${h.mode}${h.downgraded ? ' (dgr)' : ''} · ${h.rule} · ${fmtTime(h.seconds || 0)}</div>
+        <div class="e-meta">${h.mode}${h.downgraded ? ' (dgr)' : ''} · ${h.object || ''} · ${fmtTime(h.seconds || 0)}</div>
       </div>
       <div class="e-res ${h.outcome === 'got' ? 'ok' : 'no'}">${h.outcome === 'got' ? 'GOT' : 'MISS'}</div>
     </div>`).join('');
