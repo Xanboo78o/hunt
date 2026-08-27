@@ -144,6 +144,9 @@ input[type=text]:focus{outline:none;border-color:var(--gold)}
 .dot{width:7px;height:7px;border-radius:99px;background:#3a322c;transition:background .2s,width .2s}
 .dot.on{background:var(--gold);width:18px}
 .credit{font-size:9px;color:#5f554d;margin-top:6px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.newtag.caught{background:#2c2622;color:var(--dim)}
+.stat.wide{flex:1.6}
+.stat b i{font-style:normal;color:var(--dim);font-size:17px}
 .newtag{
   display:inline-block;vertical-align:middle;background:var(--acid);color:#1c2400;
   font-family:"JetBrains Mono",monospace;font-weight:700;font-size:11px;letter-spacing:.16em;

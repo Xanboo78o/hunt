@@ -373,48 +373,6 @@ async function getPool(object) {
   return object === 'TREE' ? plants.filter(isTree) : plants.filter(p => !isTree(p));
 }
 
-/* ============================================================
-   THE DEX — Pokedex rules. An ID is handed out the first time you
-   meet something and is yours forever, in the order you met it.
-   Nothing ever renumbers. Lives in localStorage under wheel.dex.
-   ============================================================ */
-const DEX_SEED = [
-  { key: 'inat:12727', no: 1, name: 'American Robin', sci: 'Turdus migratorius', object: 'CREATURE' },
-];
-
-const catNo = n => '#' + String(n || 0).padStart(3, '0');
-const dexKey = item => (item.id ? 'inat:' + item.id : 'rock:' + (item.label || '').toLowerCase());
-
-function getDex() {
-  let dex = DB.get('dex', null);
-  if (!dex) {
-    dex = {};
-    DEX_SEED.forEach(e => { dex[e.key] = { no: e.no, name: e.name, sci: e.sci, object: e.object, got: false, first: null }; });
-    DB.set('dex', dex);
-  }
-  return dex;
-}
-
-// first sighting claims the next free number
-function dexAssign(item, object) {
-  const dex = getDex(), key = dexKey(item);
-  if (dex[key]) return { ...dex[key], isNew: false };
-  const next = Object.values(dex).reduce((m, e) => Math.max(m, e.no), 0) + 1;
-  dex[key] = { no: next, name: item.label, sci: item.sci || '', object, got: false, first: todayKey() };
-  DB.set('dex', dex);
-  return { ...dex[key], isNew: true };
-}
-
-function dexCaught(key) {
-  const dex = getDex();
-  if (!dex[key]) return;
-  dex[key].got = true;
-  DB.set('dex', dex);
-}
-
-const dexCount = () => Object.keys(getDex()).length;
-const dexCaughtCount = () => Object.values(getDex()).filter(e => e.got).length;
-
 /* weighted sample without replacement — sqrt weighting lets rarities onto the wheel */
 function sample(pool, n) {
   const src = pool.map(p => ({ ...p, raw: p.w, k: Math.pow(p.w, 0.5) * (0.35 + Math.random()) }));
@@ -432,6 +390,66 @@ function rarityTier(item, pool) {
   const pct = Math.max(0, rank) / pool.length;
   const tier = pct < 0.1 ? 'COMMON' : pct < 0.4 ? 'UNCOMMON' : pct < 0.8 ? 'RARE' : 'NEEDLE IN A HAYSTACK';
   return `${(item.raw ?? item.w).toLocaleString()} sightings in range · ${tier}`;
+}
+
+/* ============================================================
+   THE DEX — every single thing in range has a number BEFORE you
+   ever go out, like a dex that's fully printed on day one. Pins
+   come first, then each object type in order of local sightings.
+   Numbers are handed out once and never move again.
+   ============================================================ */
+const DEX_PINS = [
+  { key: 'inat:12727', name: 'American Robin', sci: 'Turdus migratorius', object: 'CREATURE' },
+];
+const DEX_ORDER = ['CREATURE', 'PLANT', 'TREE', 'ROCK'];
+
+const catNo = n => '#' + String(n || 0).padStart(3, '0');
+const dexKey = item => (item.id ? 'inat:' + item.id : 'rock:' + (item.label || '').toLowerCase());
+const getDex = () => DB.get('dex', null) || {};
+const dexCount = () => Object.keys(getDex()).length;
+const dexCaughtCount = () => Object.values(getDex()).filter(e => e.got).length;
+
+// numbers the whole local biota in one go. Runs once, when you set your location.
+async function buildDex(onProgress) {
+  const dex = {};
+  let no = 0;
+  DEX_PINS.forEach(p => { dex[p.key] = { no: ++no, name: p.name, sci: p.sci, object: p.object, got: false }; });
+
+  for (const obj of DEX_ORDER) {
+    if (onProgress) onProgress(obj, no);
+    let pool = [];
+    try { pool = await getPool(obj); } catch { continue; }
+    pool.forEach(item => {
+      const k = dexKey(item);
+      if (dex[k]) return;                                  // a pin, or a plant already seen as a tree
+      dex[k] = { no: ++no, name: item.label, sci: item.sci || '', object: obj, got: false };
+    });
+  }
+  DB.set('dex', dex);
+  return dex;
+}
+
+async function ensureDex(onProgress) {
+  const dex = getDex();
+  if (Object.keys(dex).length > 1) return dex;             // already printed
+  return buildDex(onProgress);
+}
+
+// safety net: something the dex somehow missed gets appended, never renumbered
+function dexEntry(item, object) {
+  const dex = getDex(), key = dexKey(item);
+  if (dex[key]) return dex[key];
+  const next = Object.values(dex).reduce((m, e) => Math.max(m, e.no), 0) + 1;
+  dex[key] = { no: next, name: item.label, sci: item.sci || '', object, got: false };
+  DB.set('dex', dex);
+  return dex[key];
+}
+
+function dexCaught(key) {
+  const dex = getDex();
+  if (!dex[key]) return;
+  dex[key].got = true;
+  DB.set('dex', dex);
 }
 
 /* ============================================================
@@ -519,7 +537,7 @@ async function startHunt() {
   let final = mode, why = '';
 
   const detail = await taxonDetail(sp.id);
-  const dex = dexAssign(sp, S.picked.OBJECT.label);
+  const dex = dexEntry(sp, S.picked.OBJECT.label);
   if (mode === 'CATCH') {
     if (!CATCHABLE_TAXA.has(sp.taxon)) {
       final = 'PHOTOGRAPHY'; why = `${sp.taxon.toLowerCase()} — not something you catch with hands`;
@@ -534,7 +552,7 @@ async function startHunt() {
     started: Date.now(),
     object: S.picked.OBJECT.label,
     name: sp.label, sci: sp.sci, taxon: sp.taxon,
-    no: dex.no, isNew: dex.isNew, dexKey: dexKey(sp),
+    no: dex.no, caughtBefore: !!dex.got, dexKey: dexKey(sp),
     photos: detail.photos.length ? detail.photos : (sp.photo ? [{ url: sp.photo, credit: '' }] : []),
     rarity: rarityTier(sp, S.pool),
     mode: final, rolled: mode, downgraded: final !== mode, why,
@@ -546,7 +564,7 @@ async function startHunt() {
 function renderBrief() {
   const h = S.active;
   $('#briefKind').textContent = h.object;
-  $('#briefNo').innerHTML = catNo(h.no) + (h.isNew ? ' <span class="newtag">NEW</span>' : '');
+  $('#briefNo').innerHTML = catNo(h.no) + (h.caughtBefore ? ' <span class="newtag caught">✓ CAUGHT</span>' : '');
   $('#briefName').textContent = h.name.toUpperCase();
   $('#briefSci').textContent = h.sci || '';
   $('#briefRarity').textContent = h.rarity || '';
@@ -622,8 +640,7 @@ function renderLog() {
   const got = S.hunts.filter(h => h.outcome === 'got').length;
   const days = new Set(S.hunts.map(h => h.date)).size;
   $('#logStats').innerHTML = `
-    <div class="stat"><b>${dexCount()}</b><span>IN THE DEX</span></div>
-    <div class="stat"><b>${dexCaughtCount()}</b><span>GOT</span></div>
+    <div class="stat wide"><b>${dexCaughtCount()} <i>/ ${dexCount()}</i></b><span>DEX CAUGHT</span></div>
     <div class="stat"><b>${days}</b><span>DAYS OUT</span></div>
     <div class="stat"><b>${S.hunts.length}</b><span>HUNTS</span></div>`;
 
@@ -717,10 +734,22 @@ function unlock(forced) {
 /* ============================================================
    FLOW
    ============================================================ */
-function beginChain() {
+async function beginChain() {
   S.stage = 0; S.picked = {}; S.pool = null; S.moved = 0; anchor = null;
   show('#chain');
   renderLog();
+
+  // first run at a location: print the whole dex before anything can be hunted
+  if (dexCount() <= 1) {
+    $('#stageLabel').textContent = 'THE DEX';
+    loadWheel([{ label: '…', w: 1 }], () => {});
+    $('#loadNote').textContent = 'numbering everything within 200 miles…';
+    await ensureDex(obj => { $('#loadNote').textContent = `numbering ${obj.toLowerCase()}…`; });
+    $('#loadNote').textContent = `${dexCount()} things numbered. none of them caught yet.`;
+    renderLog();
+    await new Promise(r => setTimeout(r, 1400));
+  }
+
   runStage();
   if (DB.get('lockOn', true)) armLock(); else unlock(true);
 }

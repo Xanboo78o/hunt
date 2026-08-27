@@ -13,25 +13,21 @@ A hunt randomizer that only works outside.
   protected species) the app **force-downgrades it to PHOTOGRAPHY on screen.**
 
 ### The dex
-Pokedex rules. **The first time you ever meet something it claims the next free number,
-and that number is its forever.** Nothing renumbers, ever. One global list across
-creatures, plants, trees and rocks — so #007 might be a moth and #008 a slab of schist.
+**Everything in range already has a number before you go out.** The first time you set a
+location the app prints the whole local dex in one pass — in Concord NH that's **611
+things** — and those numbers never move again.
 
-`#001` is seeded to the **American Robin** (the first bird Adam learned). Everything
-else starts at #002 in the order you actually run into it. A first encounter shows a
-green **NEW** flash next to the number.
+Order: pins first, then each object type by local sighting count.
+`#001` is pinned to the **American Robin** (the first bird Adam learned). Then
+#002–#295 creatures, #296–#537 plants, #538–#591 trees, #592–#611 rocks.
+Add more pins in `DEX_PINS` at the top of `app.js`.
 
-The dex tracks *seen* and *got* separately, like a real dex — rolling something registers
-it, tapping GOT IT marks it caught. The log screen counts both.
+The dex tracks caught separately from numbered, so the log reads **`12 / 611`** — that's
+the real progress bar for the series. A target you've caught before shows a grey ✓ on the
+brief. Anything the dex somehow missed gets appended at the end rather than renumbering.
 
-To pin another number, add it to `DEX_SEED` at the top of `app.js`.
-
-**It lives in localStorage.** Clearing site data on the iPad wipes the dex. Worth an
-export button before the numbers mean anything.
-
-The brief shows **3 photos you can swipe through** (iNaturalist `taxon_photos`), with the
-photographer's credit under them — the photos are CC-licensed, so the credit stays on
-screen. Rocks have no photos and the strip just hides.
+**It lives in localStorage.** Clearing site data on the iPad wipes it. Worth an export
+button before those numbers mean anything.
 
 Timer runs in the corner from the moment MODE locks, and gets logged with the result.
 Tapping GOT IT or FAILED plays its own sound.
