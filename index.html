@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>THE WHEEL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ TOP BAR ============ -->
+  <header id="bar">
+    <div class="bar-l">
+      <span id="dayCount">DAY 1</span>
+      <span id="place" class="muted">—</span>
+    </div>
+    <div class="bar-r">
+      <span id="timer" class="hidden">00:00</span>
+      <button id="logBtn" class="ghost">LOG</button>
+    </div>
+  </header>
+
+  <!-- ============ SETUP ============ -->
+  <section id="setup" class="screen">
+    <h1 class="huge">THE<br>WHEEL</h1>
+    <p class="lede">It won't tell you what you're hunting until you're outside.</p>
+
+    <div class="field">
+      <label>WHERE ARE YOU HUNTING?</label>
+      <button id="useGps" class="big">USE MY LOCATION</button>
+      <div class="or">or</div>
+      <input id="manualPlace" type="text" placeholder="town, state" autocomplete="off">
+      <button id="useManual" class="big alt">SET IT</button>
+    </div>
+
+    <label class="toggle">
+      <input type="checkbox" id="indoorLock" checked>
+      <span>REFUSE TO SPIN INDOORS</span>
+    </label>
+    <p class="fineprint">You have to move <b id="lockMeters">60</b> m before the first wheel unlocks.</p>
+
+    <div id="setupStatus" class="status"></div>
+  </section>
+
+  <!-- ============ THE CHAIN ============ -->
+  <section id="chain" class="screen hidden">
+
+    <div id="lockNotice" class="locknotice hidden">
+      <div class="lock-big">LOCKED</div>
+      <div class="lock-sub">GET OUTSIDE</div>
+      <div class="lock-meter"><div id="lockFill"></div></div>
+      <div class="lock-num"><span id="lockNow">0</span> / <span id="lockNeed">60</span> m</div>
+      <button id="killLock" class="ghost small">override</button>
+    </div>
+
+    <div id="stageLabel" class="stagelabel">OBJECT</div>
+
+    <div id="wheelWrap">
+      <div id="pointer"></div>
+      <canvas id="wheel" width="720" height="720"></canvas>
+      <div id="spinHint">FLICK IT</div>
+    </div>
+
+    <div id="breadcrumb"></div>
+    <div id="loadNote" class="status"></div>
+  </section>
+
+  <!-- ============ THE BRIEF ============ -->
+  <section id="brief" class="screen hidden">
+    <div class="brief-head">TODAY'S HUNT</div>
+
+    <div id="downgrade" class="downgrade hidden">
+      <span class="dg-from">CATCH</span>
+      <span class="dg-arrow">▸</span>
+      <span class="dg-to">PHOTOGRAPHY</span>
+      <div class="dg-why"></div>
+    </div>
+
+    <div class="brief-card">
+      <img id="briefPhoto" alt="" class="hidden">
+      <div class="brief-kind" id="briefKind">CREATURE</div>
+      <div class="brief-name" id="briefName">—</div>
+      <div class="brief-sci" id="briefSci">—</div>
+      <div class="brief-rarity" id="briefRarity"></div>
+    </div>
+
+    <div class="brief-rows">
+      <div class="brow"><span>RULE</span><b id="briefRule">—</b></div>
+      <div class="brow"><span>MODE</span><b id="briefMode">—</b></div>
+    </div>
+
+    <div class="brief-actions">
+      <button id="foundIt" class="big win">GOT IT</button>
+      <button id="missedIt" class="big lose">FAILED</button>
+    </div>
+    <button id="abandon" class="ghost small">abandon hunt</button>
+  </section>
+
+  <!-- ============ FIELD LOG ============ -->
+  <section id="log" class="screen hidden">
+    <div class="log-head">
+      <h2>FIELD LOG</h2>
+      <button id="closeLog" class="ghost">CLOSE</button>
+    </div>
+    <div id="logStats" class="logstats"></div>
+    <div id="logList"></div>
+    <button id="newHunt" class="big">NEW HUNT</button>
+    <button id="wipe" class="ghost small">erase everything</button>
+  </section>
+
+</div>
+
+<script src="app.js?v=1"></script>
+</body>
+</html>
