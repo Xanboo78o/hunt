@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>THE WHEEL — sound picker</title>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 <style>
   #app{justify-content:flex-start}
   h1{font-family:Anton,Impact,sans-serif;font-size:34px;margin:6px 0 2px;letter-spacing:.03em}
@@ -41,6 +41,14 @@
   <p class="hint">One hit when the wheel locks.</p>
   <div class="row" id="rowThunk"></div>
 
+  <h2>GOT IT</h2>
+  <p class="hint">Plays when you tap GOT IT at the end of a hunt.</p>
+  <div class="row" id="rowWin"></div>
+
+  <h2>FAILED</h2>
+  <p class="hint">And when you tap FAILED.</p>
+  <div class="row" id="rowLose"></div>
+
   <h2>UNLOCK</h2>
   <p class="hint">Plays when you've walked far enough and the first wheel frees up.</p>
   <div class="row" id="rowUnlock"></div>
@@ -56,6 +64,50 @@
 
 <script>
 const LIB = {
+"lose": [
+{
+"file": "snd/lib/lose--card-shove-1.wav",
+"name": "card-shove-1"
+},
+{
+"file": "snd/lib/lose--chips-collide-1.wav",
+"name": "chips-collide-1"
+},
+{
+"file": "snd/lib/lose--impactGeneric_light_000.wav",
+"name": "impactGeneric_light_000"
+},
+{
+"file": "snd/lib/lose--impactGeneric_light_002.wav",
+"name": "impactGeneric_light_002"
+},
+{
+"file": "snd/lib/lose--impactWood_heavy_000.wav",
+"name": "impactWood_heavy_000"
+}
+],
+"thunk": [
+{
+"file": "snd/lib/thunk--chips-stack-3.wav",
+"name": "chips-stack-3"
+},
+{
+"file": "snd/lib/thunk--die-throw-1.wav",
+"name": "die-throw-1"
+},
+{
+"file": "snd/lib/thunk--impactMining_002.wav",
+"name": "impactMining_002"
+},
+{
+"file": "snd/lib/thunk--impactPlank_medium_000.wav",
+"name": "impactPlank_medium_000"
+},
+{
+"file": "snd/lib/thunk--impactWood_heavy_000.wav",
+"name": "impactWood_heavy_000"
+}
+],
 "tick": [
 {
 "file": "snd/lib/tick--chip-lay-1.wav",
@@ -102,28 +154,6 @@ const LIB = {
 "name": "impactWood_light_000"
 }
 ],
-"thunk": [
-{
-"file": "snd/lib/thunk--chips-stack-3.wav",
-"name": "chips-stack-3"
-},
-{
-"file": "snd/lib/thunk--die-throw-1.wav",
-"name": "die-throw-1"
-},
-{
-"file": "snd/lib/thunk--impactMining_002.wav",
-"name": "impactMining_002"
-},
-{
-"file": "snd/lib/thunk--impactPlank_medium_000.wav",
-"name": "impactPlank_medium_000"
-},
-{
-"file": "snd/lib/thunk--impactWood_heavy_000.wav",
-"name": "impactWood_heavy_000"
-}
-],
 "unlock": [
 {
 "file": "snd/lib/unlock--card-fan-1.wav",
@@ -149,6 +179,32 @@ const LIB = {
 "file": "snd/lib/unlock--impactMetal_light_002.wav",
 "name": "impactMetal_light_002"
 }
+],
+"win": [
+{
+"file": "snd/lib/win--card-fan-1.wav",
+"name": "card-fan-1"
+},
+{
+"file": "snd/lib/win--cards-pack-open-1.wav",
+"name": "cards-pack-open-1"
+},
+{
+"file": "snd/lib/win--chips-handle-1.wav",
+"name": "chips-handle-1"
+},
+{
+"file": "snd/lib/win--impactBell_heavy_000.wav",
+"name": "impactBell_heavy_000"
+},
+{
+"file": "snd/lib/win--impactBell_heavy_002.wav",
+"name": "impactBell_heavy_002"
+},
+{
+"file": "snd/lib/win--impactBell_heavy_004.wav",
+"name": "impactBell_heavy_004"
+}
 ]
 };
 // the lib copies of whatever snd/tick*.wav currently are, so the buttons show as ticked
@@ -157,6 +213,8 @@ const DEFAULTS = {
           .map(n => `snd/lib/tick--${n}.wav`),
   thunk: 'snd/lib/thunk--impactWood_heavy_000.wav',
   unlock: 'snd/lib/unlock--chips-stack-1.wav',
+  win: 'snd/lib/win--impactBell_heavy_000.wav',
+  lose: 'snd/lib/lose--impactGeneric_light_000.wav',
 };
 const DB = {
   get(k,d){ try { return JSON.parse(localStorage.getItem('wheel.'+k)) ?? d; } catch { return d; } },
@@ -180,7 +238,14 @@ async function play(url, rate=1, gain=1){
 const note = t => document.getElementById('note').textContent = t;
 
 // current selection, seeded from whatever the app is using
-let sel = DB.get('sndPick', null) || { tick: DEFAULTS.tick.slice(), thunk: DEFAULTS.thunk, unlock: DEFAULTS.unlock };
+let saved = DB.get('sndPick', null);
+let sel = {
+  tick:   (saved && saved.tick && saved.tick.length) ? saved.tick.slice() : DEFAULTS.tick.slice(),
+  thunk:  (saved && saved.thunk)  || DEFAULTS.thunk,
+  unlock: (saved && saved.unlock) || DEFAULTS.unlock,
+  win:    (saved && saved.win)    || DEFAULTS.win,
+  lose:   (saved && saved.lose)   || DEFAULTS.lose,
+};
 
 function build(role, el){
   el.innerHTML = '';
@@ -204,12 +269,14 @@ function build(role, el){
 function paint(){
   document.querySelectorAll('.cand').forEach(b => {
     const f = b.dataset.file;
-    b.classList.toggle('on', sel.tick.includes(f) || sel.thunk === f || sel.unlock === f);
+    b.classList.toggle('on', sel.tick.includes(f) || sel.thunk === f || sel.unlock === f || sel.win === f || sel.lose === f);
   });
   document.getElementById('picked').innerHTML =
     `<b>tick</b> ${sel.tick.map(f=>f.split('--').pop().replace('.wav','')).join(', ') || '(none — will use defaults)'}<br>` +
     `<b>stop</b> ${sel.thunk.split('--').pop().replace('.wav','')}<br>` +
-    `<b>unlock</b> ${sel.unlock.split('--').pop().replace('.wav','')}`;
+    `<b>unlock</b> ${sel.unlock.split('--').pop().replace('.wav','')}<br>` +
+    `<b>got it</b> ${sel.win.split('--').pop().replace('.wav','')}<br>` +
+    `<b>failed</b> ${sel.lose.split('--').pop().replace('.wav','')}`;
 }
 
 // replays the app's real physics so you hear the slowdown, not one isolated click
@@ -239,13 +306,15 @@ document.getElementById('save').onclick = () => {
 };
 document.getElementById('reset').onclick = () => {
   DB.set('sndPick', null);
-  sel = { tick: DEFAULTS.tick.slice(), thunk: DEFAULTS.thunk, unlock: DEFAULTS.unlock };
+  sel = { tick: DEFAULTS.tick.slice(), thunk: DEFAULTS.thunk, unlock: DEFAULTS.unlock, win: DEFAULTS.win, lose: DEFAULTS.lose };
   paint(); note('back to defaults');
 };
 
 build('tick', document.getElementById('rowTick'));
 build('thunk', document.getElementById('rowThunk'));
 build('unlock', document.getElementById('rowUnlock'));
+build('win', document.getElementById('rowWin'));
+build('lose', document.getElementById('rowLose'));
 paint();
 document.addEventListener('pointerdown', () => { ctx(); if (AC.state==='suspended') AC.resume(); }, {once:true});
 </script>

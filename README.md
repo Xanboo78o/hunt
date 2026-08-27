@@ -13,7 +13,18 @@ A hunt randomizer that only works outside.
   If CATCH lands on something you shouldn't grab (a bird, a mammal, a reptile, or a
   protected species) the app **force-downgrades it to PHOTOGRAPHY on screen.**
 
+Every target carries a **catalogue number** — `#001` is the most-sighted thing of its
+kind within range, counting down from there. Numbered per object type, so there's a
+CREATURE #001 and a TREE #001. In Concord NH: creature #001 is the Common Eastern
+Bumble Bee, #003 is the American Robin; tree #001 is eastern white pine; rock #001 is
+sandstone.
+
+The brief shows **3 photos you can swipe through** (iNaturalist `taxon_photos`), with the
+photographer's credit under them — the photos are CC-licensed, so the credit stays on
+screen. Rocks have no photos and the strip just hides.
+
 Timer runs in the corner from the moment MODE locks, and gets logged with the result.
+Tapping GOT IT or FAILED plays its own sound.
 
 ### The indoor lock
 The first wheel won't spin until GPS says you've moved 60 m. There's an override.
@@ -34,7 +45,7 @@ hard-trimmed to 140 ms with an 18 ms fade — a longer tick turns to mush once t
 is throwing 40 of them a second.
 
 In use: `snd/tick1-6.wav` (round-robin, never the same take twice running),
-`snd/thunk.wav`, `snd/unlock.wav`. The tick also gets brighter and thinner the faster
+`snd/thunk.wav`, `snd/unlock.wav`, `snd/win.wav` (a real bell), `snd/lose.wav`. The tick also gets brighter and thinner the faster
 the wheel is going, which is what makes the slowdown feel physical.
 
 **Don't like one? Open `sounds.html`.** Every alternate take is in `snd/lib/` — tap to

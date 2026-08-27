@@ -29,7 +29,7 @@ const TREE_GENERA = new Set(('Acer Quercus Pinus Betula Populus Fagus Fraxinus T
   'Alnus Chamaecyparis Catalpa Gleditsia Celtis Magnolia Aesculus Ailanthus Morus Ginkgo Cercis Ilex'
 ).split(' '));
 
-const CATCHABLE_TAXA = new Set(['Insecta', 'Arachnida', 'Mollusca', 'Amphibia', 'Actinopterygii', 'Animalia', 'Plantae', 'Fungi']);
+const CATCHABLE_TAXA = new Set(['Insecta', 'Arachnida', 'Mollusca', 'Amphibia', 'Actinopterygii', 'Animalia', 'Plantae', 'Fungi', 'Rock']);
 
 /* ---------------- storage ---------------- */
 const DB = {
@@ -62,12 +62,17 @@ function dayNumber() {
 }
 
 /* ---------------- sound (real samples — see tools/make-sounds.mjs) ---------------- */
-const SND_DEFAULTS = { tick: [1, 2, 3, 4, 5, 6].map(i => `snd/tick${i}.wav`), thunk: ['snd/thunk.wav'], unlock: ['snd/unlock.wav'] };
+const SND_DEFAULTS = {
+  tick: [1, 2, 3, 4, 5, 6].map(i => `snd/tick${i}.wav`),
+  thunk: ['snd/thunk.wav'], unlock: ['snd/unlock.wav'],
+  win: ['snd/win.wav'], lose: ['snd/lose.wav'],
+};
 const SND_PICK = DB.get('sndPick', null);   // set by sounds.html; null = the defaults
 const SND_FILES = SND_PICK && SND_PICK.tick && SND_PICK.tick.length
-  ? { tick: SND_PICK.tick, thunk: [SND_PICK.thunk], unlock: [SND_PICK.unlock] }
+  ? { tick: SND_PICK.tick, thunk: [SND_PICK.thunk], unlock: [SND_PICK.unlock],
+      win: [SND_PICK.win || 'snd/win.wav'], lose: [SND_PICK.lose || 'snd/lose.wav'] }
   : SND_DEFAULTS;
-const SND = { tick: [], thunk: [], unlock: [] };
+const SND = { tick: [], thunk: [], unlock: [], win: [], lose: [] };
 let AC = null, rawSnd = null, decoded = false;
 
 // grab the bytes at boot; decoding waits for the first gesture (iOS)
@@ -362,14 +367,21 @@ async function fetchRock(lat, lng) {
   return out;
 }
 
+// #001 is the most-sighted thing of its kind here. Numbered per object type,
+// so there's a CREATURE #001 and a TREE #001. Copies, so plants and trees don't
+// overwrite each other's numbers in the shared cache.
+const numbered = list => list.map((o, i) => ({ ...o, no: i + 1 }));
+
 async function getPool(object) {
   const { lat, lng } = S.loc;
-  if (object === 'ROCK') return fetchRock(lat, lng);
-  if (object === 'CREATURE') return fetchLife(lat, lng, CREATURE_TAXA);
+  if (object === 'ROCK') return numbered(await fetchRock(lat, lng));
+  if (object === 'CREATURE') return numbered(await fetchLife(lat, lng, CREATURE_TAXA));
   const plants = await fetchLife(lat, lng, 'Plantae');
   const isTree = p => TREE_GENERA.has((p.sci || '').split(' ')[0]);
-  return object === 'TREE' ? plants.filter(isTree) : plants.filter(p => !isTree(p));
+  return numbered(object === 'TREE' ? plants.filter(isTree) : plants.filter(p => !isTree(p)));
 }
+
+const catNo = n => '#' + String(n || 0).padStart(3, '0');
 
 /* weighted sample without replacement — sqrt weighting lets rarities onto the wheel */
 function sample(pool, n) {
@@ -384,8 +396,7 @@ function sample(pool, n) {
 
 function rarityTier(item, pool) {
   if (!pool || !pool.length || item.taxon === 'Rock') return '';
-  const rank = pool.findIndex(p => p.sci === item.sci && p.label === item.label);
-  const pct = rank / pool.length;
+  const pct = ((item.no || 1) - 1) / pool.length;
   const tier = pct < 0.1 ? 'COMMON' : pct < 0.4 ? 'UNCOMMON' : pct < 0.8 ? 'RARE' : 'NEEDLE IN A HAYSTACK';
   return `${(item.raw ?? item.w).toLocaleString()} sightings in range · ${tier}`;
 }
@@ -441,16 +452,27 @@ async function runStage() {
 }
 
 const PROTECTED = /endangered|threatened|special concern|protected|vulnerable|imperiled|rare/i;
-async function isProtected(taxonId) {
-  if (!taxonId) return false;
+
+// one call gets both the photo set and the conservation status
+async function taxonDetail(taxonId) {
+  const empty = { photos: [], protected: false };
+  if (!taxonId) return empty;
   try {
     const j = await jget(`https://api.inaturalist.org/v1/taxa/${taxonId}`);
     const t = j.results && j.results[0];
-    if (!t) return false;
+    if (!t) return empty;
     const names = (t.conservation_statuses || []).map(c => c.status_name || '').join(' ');
     const codes = (t.conservation_statuses || []).map(c => (c.status || '').toUpperCase());
-    return PROTECTED.test(names) || codes.some(c => /^S[12]|^N[12]|^G[12]|^EN$|^CR$|^VU$|^T$|^E$/.test(c));
-  } catch { return false; }
+    const photos = (t.taxon_photos || []).slice(0, 3).map(p => ({
+      url: p.photo.medium_url,
+      credit: p.photo.attribution || '',
+    }));
+    if (!photos.length && t.default_photo) photos.push({ url: t.default_photo.medium_url, credit: t.default_photo.attribution || '' });
+    return {
+      photos,
+      protected: PROTECTED.test(names) || codes.some(c => /^S[12]|^N[12]|^G[12]|^EN$|^CR$|^VU$|^T$|^E$/.test(c)),
+    };
+  } catch { return empty; }
 }
 
 function pick(item) {
@@ -466,10 +488,11 @@ async function startHunt() {
   const sp = S.picked.SPECIES, mode = S.picked.MODE.label;
   let final = mode, why = '';
 
+  const detail = await taxonDetail(sp.id);
   if (mode === 'CATCH') {
     if (!CATCHABLE_TAXA.has(sp.taxon)) {
       final = 'PHOTOGRAPHY'; why = `${sp.taxon.toLowerCase()} — not something you catch with hands`;
-    } else if (await isProtected(sp.id)) {
+    } else if (detail.protected) {
       final = 'PHOTOGRAPHY'; why = 'protected species — you do not touch this one';
     }
   }
@@ -479,7 +502,9 @@ async function startHunt() {
     day: dayNumber(),
     started: Date.now(),
     object: S.picked.OBJECT.label,
-    name: sp.label, sci: sp.sci, photo: sp.photo || null, taxon: sp.taxon,
+    name: sp.label, sci: sp.sci, taxon: sp.taxon,
+    no: sp.no || 0,
+    photos: detail.photos.length ? detail.photos : (sp.photo ? [{ url: sp.photo, credit: '' }] : []),
     rarity: rarityTier(sp, S.pool),
     rule: S.picked.RULE.label,
     mode: final, rolled: mode, downgraded: final !== mode, why,
@@ -491,11 +516,11 @@ async function startHunt() {
 function renderBrief() {
   const h = S.active;
   $('#briefKind').textContent = h.object;
+  $('#briefNo').textContent = catNo(h.no);
   $('#briefName').textContent = h.name.toUpperCase();
   $('#briefSci').textContent = h.sci || '';
   $('#briefRarity').textContent = h.rarity || '';
-  const img = $('#briefPhoto');
-  if (h.photo) { img.src = h.photo; img.classList.remove('hidden'); } else img.classList.add('hidden');
+  buildStrip(h.photos || []);
   $('#briefRule').textContent = h.rule;
   $('#briefMode').textContent = h.mode;
 
@@ -505,6 +530,35 @@ function renderBrief() {
 
   show('#brief');
   startTimer();
+}
+
+/* swipeable photo strip — iNat photos are CC, so the credit stays on screen */
+function buildStrip(photos) {
+  const strip = $('#strip'), scroll = $('#stripScroll'), dots = $('#stripDots'), credit = $('#stripCredit');
+  scroll.innerHTML = ''; dots.innerHTML = '';
+  if (!photos.length) { strip.classList.add('hidden'); return; }
+  strip.classList.remove('hidden');
+
+  photos.forEach((p, i) => {
+    const img = document.createElement('img');
+    img.src = p.url; img.alt = ''; img.loading = i ? 'lazy' : 'eager';
+    scroll.appendChild(img);
+    const d = document.createElement('div');
+    d.className = 'dot' + (i ? '' : ' on');
+    dots.appendChild(d);
+  });
+  dots.classList.toggle('hidden', photos.length < 2);
+  credit.textContent = photos[0].credit;
+
+  let raf = 0;
+  scroll.onscroll = () => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const i = Math.max(0, Math.min(photos.length - 1, Math.round(scroll.scrollLeft / scroll.clientWidth)));
+      [...dots.children].forEach((d, j) => d.classList.toggle('on', j === i));
+      credit.textContent = photos[i].credit;
+    });
+  };
 }
 
 /* ---------------- timer ---------------- */
@@ -521,6 +575,8 @@ function stopTimer() { clearInterval(tick); $('#timer').classList.add('hidden');
 
 function endHunt(outcome) {
   if (!S.active) return;
+  play(outcome === 'got' ? 'win' : 'lose', 1, 0.95);
+  buzz(outcome === 'got' ? [40, 50, 40, 50, 160] : [180]);
   const h = { ...S.active, outcome, seconds: Math.round((Date.now() - S.active.started) / 1000) };
   S.hunts.unshift(h);
   DB.set('hunts', S.hunts);
@@ -546,7 +602,7 @@ function renderLog() {
     <div class="entry">
       <div class="e-day">D${h.day}</div>
       <div class="e-mid">
-        <div class="e-name">${h.name}</div>
+        <div class="e-name"><span class="e-no">${catNo(h.no)}</span> ${h.name}</div>
         <div class="e-meta">${h.mode}${h.downgraded ? ' (dgr)' : ''} · ${h.rule} · ${fmtTime(h.seconds || 0)}</div>
       </div>
       <div class="e-res ${h.outcome === 'got' ? 'ok' : 'no'}">${h.outcome === 'got' ? 'GOT' : 'MISS'}</div>

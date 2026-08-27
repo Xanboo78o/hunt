@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -84,8 +84,13 @@
     </div>
 
     <div class="brief-card">
-      <img id="briefPhoto" alt="" class="hidden">
-      <div class="brief-kind" id="briefKind">CREATURE</div>
+      <div id="strip" class="strip hidden">
+        <div class="strip-scroll" id="stripScroll"></div>
+        <div class="dots" id="stripDots"></div>
+        <div class="credit" id="stripCredit"></div>
+      </div>
+      <div class="brief-kind"><span id="briefKind">CREATURE</span></div>
+      <div class="brief-no" id="briefNo">#000</div>
       <div class="brief-name" id="briefName">—</div>
       <div class="brief-sci" id="briefSci">—</div>
       <div class="brief-rarity" id="briefRarity"></div>
@@ -117,6 +122,6 @@
 
 </div>
 
-<script src="app.js?v=4"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>

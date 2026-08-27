@@ -130,7 +130,24 @@ input[type=text]:focus{outline:none;border-color:var(--gold)}
   background:var(--ink2);border:2px solid #2c2622;border-radius:18px;
   padding:18px;text-align:center;overflow:hidden;
 }
-#briefPhoto{width:120px;height:120px;object-fit:cover;border-radius:14px;margin-bottom:12px;border:2px solid #2c2622}
+.strip{margin:-4px -4px 12px}
+.strip-scroll{
+  display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;border-radius:14px;
+}
+.strip-scroll::-webkit-scrollbar{display:none}
+.strip-scroll img{
+  flex:0 0 100%;width:100%;aspect-ratio:4/3;object-fit:cover;
+  border-radius:14px;scroll-snap-align:center;background:#221d1a;
+}
+.dots{display:flex;gap:6px;justify-content:center;margin-top:8px}
+.dot{width:7px;height:7px;border-radius:99px;background:#3a322c;transition:background .2s,width .2s}
+.dot.on{background:var(--gold);width:18px}
+.credit{font-size:9px;color:#5f554d;margin-top:6px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brief-no{
+  font-family:Anton,Impact,sans-serif;font-size:34px;color:var(--gold);
+  line-height:1;letter-spacing:.02em;margin-top:2px;
+}
 .brief-kind{font-size:11px;letter-spacing:.2em;color:var(--sky)}
 .brief-name{font-family:Anton,Impact,sans-serif;font-size:clamp(28px,9vw,42px);line-height:1.02;margin:6px 0 2px}
 .brief-sci{font-size:12px;color:var(--dim);font-style:italic}
@@ -160,6 +177,7 @@ input[type=text]:focus{outline:none;border-color:var(--gold)}
 .entry .e-day{font-family:Anton,sans-serif;font-size:15px;color:var(--dim);width:46px;flex:none}
 .entry .e-mid{flex:1;min-width:0}
 .entry .e-name{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entry .e-no{color:var(--gold);font-weight:700}
 .entry .e-meta{font-size:10px;color:var(--dim);letter-spacing:.08em}
 .entry .e-res{font-family:Anton,sans-serif;font-size:13px;flex:none}
 .e-res.ok{color:var(--acid)}
